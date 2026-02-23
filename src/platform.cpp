@@ -11,7 +11,14 @@ Platform::Platform(char const* title, int windowWidth, int windowHeight, int tex
         SDL_Log("Renderer creation failed: %s", SDL_GetError());
     }
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+    SDL_SetRenderDrawColor(renderer, 192, 184, 242, 255);
+
+    SDL_SetRenderLogicalPresentation(renderer,
+    textureWidth,
+    textureHeight,
+    SDL_LOGICAL_PRESENTATION_INTEGER_SCALE
+    );
+
 
     texture = SDL_CreateTexture(
         renderer,
@@ -20,6 +27,10 @@ Platform::Platform(char const* title, int windowWidth, int windowHeight, int tex
         textureWidth,
         textureHeight
     );
+
+    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
+
+    SDL_SetTextureColorMod(texture, 15, 3, 92);
 
    
 }

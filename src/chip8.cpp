@@ -6,7 +6,7 @@ chip8::chip8()
 
     // initialise registers and memory once
 
-    pc     = (WORD)START_ADDRESS;    // where the program starts
+    pc     = START_ADDRESS;    // where the program starts
     opcode = 0;                      // Reset opcode
     I      = 0;                      // Reset index register
     sp     = 0;                      // reset stack pointer 
@@ -26,7 +26,7 @@ chip8::chip8()
     }
 
     // Load fontset into correct registers
-    for (int i = 0; i < 80; ++i) {
+    for (unsigned int i = 0; i < 80; ++i) {
         memory[FONT_START_ADDRESS + i] = chip8_fontset[i];
     }
 
@@ -133,12 +133,19 @@ void chip8::loadGame(const char* game) {
     // get file size
     std::streampos size = file.tellg();
 
+    // Make sure ROM can fit into memory
+    if (START_ADDRESS + size > sizeof(memory)) {
+    std::cerr << "ROM too large\n";
+    exit(1);
+}
+
     // create buffer to hold contents in the program on heap
-    char* buffer = new char[size];
+    // char* buffer = new char[size];
+    std::vector<char> buffer(size);
 
     // load file contents into buffer
     file.seekg(0, std::ios::beg);
-    file.read(buffer, size);
+    file.read(buffer.data(), size);
     file.close();
 
     // load ROM contents into memory
@@ -147,7 +154,7 @@ void chip8::loadGame(const char* game) {
     }
 
     // free buffer
-    delete[] buffer;
+    // delete[] buffer;
 };
 
 
@@ -161,6 +168,11 @@ void chip8::OP_00E0() {
 void chip8::OP_00EE() {
     // Return from subroutine
     --sp;
+      if (sp < 0) {
+        std::cerr << "Stack underflow\n";
+        exit(1);
+    }
+
     pc = stack[sp];
 
 };
@@ -180,6 +192,12 @@ void chip8::OP_2nnn() {
 
     stack[sp] = pc;
     ++sp;
+
+    if (sp >= 16) {
+        std::cerr << "Stack overflow\n";
+        exit(1);
+    }
+
     pc = address;
 
 };
@@ -264,8 +282,7 @@ void chip8::OP_8xy5() {
     // Set Vx = Vx - Vy, set VF = NOT borrow.
     BYTE x = (opcode & 0x0F00u) >> 8u;
     BYTE y = (opcode & 0x00F0u) >> 4u;
-    if (V[x] > V[y]) V[0xF] = 1;
-    else V[0xF] = 0;
+    V[0xF] = (V[x] >= V[y]) ? 1 : 0;
     V[x] -= V[y];
 };
 
@@ -285,8 +302,7 @@ void chip8::OP_8xy7() {
     // Set Vx = Vy - Vx, set VF = NOT borrow
     BYTE x = (opcode & 0x0F00u) >> 8u;
     BYTE y = (opcode & 0x00F0u) >> 4u;
-    if (V[y] > V[x]) V[0xF] = 1;
-    else V[0xF] = 0;
+    V[0xF] = (V[y] >= V[x]) ? 1 : 0;
 
     V[x] = V[y] - V[x];
 };
@@ -323,6 +339,7 @@ void chip8::OP_Cxkk() {
     BYTE byte = (opcode & 0x00FFu);
     V[x] = randByte(randGen) & byte;
 };
+
 void chip8::OP_Dxyn() {
     // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
     BYTE x = (opcode & 0x0F00u) >> 8u;
@@ -335,23 +352,27 @@ void chip8::OP_Dxyn() {
 
     V[0xF] = 0;
 
-    for (size_t row = 0; row < n; ++row) {
+    for (unsigned int row = 0; row < n; ++row) {
         BYTE spriteByte = memory[I + row];
 
-        for (size_t col = 0; col < 8; ++col) {
+        for (unsigned int col = 0; col < 8; ++col) {
             BYTE spritePixel = spriteByte & (0x80u >> col);
-            uint32_t* screenPixel = &gfx[(yPos + row) * DISPLAY_WIDTH + (xPos + col)]; // TODO: potential typing issue
+
+            uint32_t xCoord = (xPos + col) % DISPLAY_WIDTH;
+            uint32_t yCoord = (yPos + row) % DISPLAY_HEIGHT;
+
+            uint32_t* screenPixel = &gfx[yCoord * DISPLAY_WIDTH + xCoord];
 
             // sprite pixel is on
             if (spritePixel) {
 
                 // screen pixel also on
-                if (*screenPixel == (BYTE)0xFF) {
-                    V[0xf] = 1;
+                if (*screenPixel != 0) {
+                    V[0xF] = 1;
                 }
 
-                // XOR withsprite pixel
-                *screenPixel ^= 0xFF;
+                // XOR with sprite pixel
+                *screenPixel ^= 0xFFFFFFFF;
             }
         }
     }

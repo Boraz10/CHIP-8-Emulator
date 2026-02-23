@@ -4,12 +4,14 @@
 #include <chrono>
 #include <random>
 #include <cstring>
+#include <iostream>
+#include <vector>
 
 #define DISPLAY_HEIGHT 32
 #define DISPLAY_WIDTH 64
 
 #define START_ADDRESS 0x200
-#define FONT_START_ADDRESS 0x200
+#define FONT_START_ADDRESS 0x050
 
 //TODO: Put some other definitions here for better readability
 
@@ -31,6 +33,7 @@ class chip8 {
         uint32_t gfx[DISPLAY_WIDTH * DISPLAY_HEIGHT];   // display
 
         BYTE keypad[16];                            // keyboard input
+
 
     
      
@@ -80,7 +83,7 @@ class chip8 {
         Chip8Func tableE[0xE + 1];                  // Opcodes where the first digit is E. Goes uo to 0xE
         Chip8Func tableF[0x65 + 1];                 // Opcodes where the first digit is F. Goes up to 0x65
 
-        const BYTE chip8_fontset[80] = {
+        BYTE chip8_fontset[80] = {
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
             0x20, 0x60, 0x20, 0x20, 0x70, // 1
             0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2

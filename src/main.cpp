@@ -12,13 +12,15 @@
 
 int main(int argc, char *argv[]) {
      if (argc != 2 && argc != 4) {
-        std::cout << "Usage:"                                                           << std::endl;
-        std::cout << "      chip8 <game>\n"                                             << std::endl;
-        std::cout << "Games are in the /games folder, adjacent to the executable"       << std::endl;
-        std::cout << "If you want to add games, put them in this folder"                << std::endl;
-        std::cout << "You don't need to specify the folder, only the name of the game." << std::endl;
-        std::cout << "\nExample:"                                                       << std::endl;
-        std::cout << "      chip8 pong\n"                                               << std::endl;
+        std::cout << "Usage:"                                                               << std::endl;
+        std::cout << "      chip8 <game>\n"                                                 << std::endl;
+        std::cout << "Games are in the /games folder, adjacent to the executable"           << std::endl;
+        std::cout << "If you want to add games, put them in this folder"                    << std::endl;
+        std::cout << "You don't need to specify the folder, only the name of the game."     << std::endl;
+        std::cout << "\nExample:"                                                           << std::endl;
+        std::cout << "      chip8 pong\n"                                                   << std::endl;
+        std::cout << "Optionally, you may alse set the scale and delay. Both must be set:"  << std::endl;
+        std::cout << "      chip8 <game> <scale> <delay>\n"                                 << std::endl;
         
         exit(1);
     }
@@ -27,8 +29,8 @@ int main(int argc, char *argv[]) {
     int delay = 1;
 
     if (argc == 4) {
-        scale = std::stoi(argv[1]);
-        delay = std::stoi(argv[2]);
+        scale = std::stoi(argv[2]);
+        delay = std::stoi(argv[3]);
     }
 
     // Initialise platform
@@ -58,11 +60,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << "rom loaded" << std::endl;
 
-    std::cout << "Size of a pixel: " << sizeof(Chip8.gfx[0]) << std::endl;
-
      int videoPitch = sizeof(Chip8.gfx[0]) * DISPLAY_WIDTH;
-
-     std::cout << "pitch identified" << std::endl;
 
      auto lastCycleTime = std::chrono::high_resolution_clock::now();
      bool quit = false;
