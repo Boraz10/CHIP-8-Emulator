@@ -3,9 +3,10 @@
 #include <fstream>
 #include <chrono>
 #include <random>
+#include <cstring>
 
-#define DISPLAY_HEIGHT 64
-#define DISPLAY_WIDTH 32
+#define DISPLAY_HEIGHT 32
+#define DISPLAY_WIDTH 64
 
 #define START_ADDRESS 0x200
 #define FONT_START_ADDRESS 0x200
@@ -27,8 +28,11 @@ class chip8 {
 
         void loadGame(const char* game);    // Loads game from file input
 
-        
+        uint32_t gfx[DISPLAY_WIDTH * DISPLAY_HEIGHT];   // display
 
+        BYTE keypad[16];                            // keyboard input
+
+    
      
     private:
         WORD opcode;                                // Code of current operation to perform. Nescesary data included in code.
@@ -36,10 +40,9 @@ class chip8 {
         BYTE memory[4096];                          // chip8 memory (4K)
         BYTE V[16];                                 // registers. V[F] is reserved for flags
 
-        BYTE I;                                     // index
+        WORD I;                                     // index
         WORD pc;                                    // program counter
 
-        BYTE gfx[DISPLAY_WIDTH * DISPLAY_HEIGHT];   // display
 
         BYTE delay_timer;                           // Delay timer. When not 0, counts down at 60hz
         BYTE sound_timer;                           // Timer for sound. When not 0, plays a tone. Counts down at 60hz
@@ -47,7 +50,6 @@ class chip8 {
         WORD stack[16];                             // stack
         WORD sp;                                    // stack pointer
 
-        BYTE keypad[16];                            // keys
 
         // Random number generation
         std::default_random_engine randGen;

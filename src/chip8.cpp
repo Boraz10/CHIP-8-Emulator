@@ -288,7 +288,7 @@ void chip8::OP_8xy7() {
     if (V[y] > V[x]) V[0xF] = 1;
     else V[0xF] = 0;
 
-    V[x] = V[y] = V[x];
+    V[x] = V[y] - V[x];
 };
 
 void chip8::OP_8xyE() {
@@ -309,13 +309,13 @@ void chip8::OP_9xy0() {
 
 void chip8::OP_Annn() {
     // Set I = nnn
-    BYTE address = opcode & 0x0FFFu;
+    WORD address = opcode & 0x0FFFu;
     I = address;
 };
 void chip8::OP_Bnnn() {
     // Jump to location nnn + V0
-    BYTE address = (opcode & 0x0FFFu);
-    pc = address = V[0];
+    WORD address = (opcode & 0x0FFFu);
+    pc = address + V[0];
 };
 void chip8::OP_Cxkk() {
     // Set Vx = random byte AND kk;
@@ -340,7 +340,7 @@ void chip8::OP_Dxyn() {
 
         for (size_t col = 0; col < 8; ++col) {
             BYTE spritePixel = spriteByte & (0x80u >> col);
-            BYTE* screenPixel = &gfx[(yPos + row) * DISPLAY_WIDTH + (xPos + col)]; // TODO: potential typing issue
+            uint32_t* screenPixel = &gfx[(yPos + row) * DISPLAY_WIDTH + (xPos + col)]; // TODO: potential typing issue
 
             // sprite pixel is on
             if (spritePixel) {
@@ -443,14 +443,14 @@ void chip8::OP_Fx55() {
     // Store registers V0 through Vx in memory starting at location I.
     BYTE x = (opcode & 0x0F00u) >> 8u;
 
-    for (BYTE i = 0; i < x; ++i) {
+    for (BYTE i = 0; i <= x; ++i) {
         memory[I + i] = V[i];
     }
 };
 void chip8::OP_Fx65() {
     // Read registers V0 through Vx from memory starting at location I.
     BYTE x = (opcode & 0x0F00u) >> 8u;
-    for (BYTE i = 0; i < x; ++i) {
+    for (BYTE i = 0; i <= x; ++i) {
         V[i] = memory[I + i];
     }
 };
