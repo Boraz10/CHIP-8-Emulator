@@ -36,31 +36,86 @@ chip8::chip8()
 
     // Initialise RNG
     randByte = std::uniform_int_distribution<BYTE>(0, 255U); // Generates random number between 0 and 255
-};
 
-void chip8::emulateCycle() {
-    // Fetch opcode
-    opcode = memory[pc] << 8 | memory[pc + 1];
+    // Populate function pointer tables
 
-    // Decode opcode
-    switch (opcode) {
-        case (WORD)0xA2F0:
-            // Execute opcode
-            I = opcode & 0x0FFF; // store 12 bits, nibble 4
-            pc += 2;
-            break;
+    // Function pointer table
+    table[0x0] = &chip8::Table0;            // Opcodes that start with 0
+    table[0x1] = &chip8::OP_1nnn;
+    table[0x2] = &chip8::OP_2nnn;
+    table[0x3] = &chip8::OP_3xkk;
+    table[0x4] = &chip8::OP_4xkk;
+    table[0x5] = &chip8::OP_5xy0;
+    table[0x6] = &chip8::OP_6xkk;
+    table[0x7] = &chip8::OP_7xkk;
+    table[0x8] = &chip8::Table8;           // Opcodes that start with 8
+    table[0x9] = &chip8::OP_9xy0;
+    table[0xA] = &chip8::OP_Annn;
+    table[0xB] = &chip8::OP_Bnnn;
+    table[0xC] = &chip8::OP_Cxkk;
+    table[0xD] = &chip8::OP_Dxyn;
+    table[0xE] = &chip8::TableE;            // Opcodes that start with E
+    table[0xF] = &chip8::TableF;            // Opcodes that start with F
 
-        default:    
-            printf("fah");
-
-
+    // poulate tables 0, 8 and E with OP_NULL by default (since not all opcodes in the table exist)
+    for (size_t i = 0; i <= 0xE; ++i) {
+        table0[i] = &chip8::OP_NULL;
+        table8[i] = &chip8::OP_NULL;
+        tableE[i] = &chip8::OP_NULL;
     }
 
+    // Put 0 opcodes in table0 at correct place
+    table0[0x0] = &chip8::OP_00E0;
+    table0[0xE] = &chip8::OP_00EE;
+
+    // Put 8 opcodes in table8 at correct place
+    table8[0x0] = &chip8::OP_8xy0;
+    table8[0x1] = &chip8::OP_8xy1;
+    table8[0x2] = &chip8::OP_8xy2;
+    table8[0x3] = &chip8::OP_8xy3;
+    table8[0x4] = &chip8::OP_8xy4;
+    table8[0x5] = &chip8::OP_8xy5;
+    table8[0x6] = &chip8::OP_8xy6;
+    table8[0x7] = &chip8::OP_8xy7;
+    table8[0xE] = &chip8::OP_8xyE;
+
+    // Put E opcodes in tableE at correct place
+    tableE[0x1] = &chip8::OP_ExA1;
+    tableE[0xE] = &chip8::OP_Ex9E;
+
+
+    // Populate table F with OP_NULL by default
+    for (size_t i = 0; i < 0x65; ++i) {
+        tableF[i] = &chip8::OP_NULL;
+    }
+
+    // Put F opcodes in tableF at correct place
+    tableF[0x07] = &chip8::OP_Fx07;
+    tableF[0x0A] = &chip8::OP_Fx0A;
+    tableF[0x15] = &chip8::OP_Fx15;
+    tableF[0x18] = &chip8::OP_Fx18;
+    tableF[0x1E] = &chip8::OP_Fx1E;
+    tableF[0x29] = &chip8::OP_Fx29;
+    tableF[0x33] = &chip8::OP_Fx33;
+    tableF[0x55] = &chip8::OP_Fx55;
+    tableF[0x65] = &chip8::OP_Fx65;
+
+
+};
+
+void chip8::Cycle() {
+    // Fetch opcode
+    opcode = (memory[pc] << 8u) | memory[pc + 1];
+
+    // Increment PC before executing
+    pc += 2;
+
+    // Decode and execute opcode
+    ((*this).*(table[(opcode & 0xF000u) >> 12u]))();
     
-
-   
-
     // Update timers
+    if (delay_timer > 0) --delay_timer;
+    if (sound_timer > 0) --sound_timer;
 
 };
 
@@ -399,3 +454,22 @@ void chip8::OP_Fx65() {
         V[i] = memory[I + i];
     }
 };
+
+
+// Table functions for opcoeds with common first digit
+
+void chip8::Table0() {
+    ((*this).*(table0[opcode & 0x000Fu]))();
+}
+
+void chip8::Table8() {
+    ((*this).*(table8[opcode & 0x000Fu]))();
+}
+
+void chip8::TableE() {
+    ((*this).*(tableE[opcode & 0x000Fu]))();
+}
+
+void chip8::TableF() {
+    ((*this).*(tableF[opcode & 0x00FFu]))();
+}

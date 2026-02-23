@@ -1,6 +1,6 @@
 #pragma once
-# include <cstdio>
-# include <fstream>
+#include <cstdio>
+#include <fstream>
 #include <chrono>
 #include <random>
 
@@ -18,13 +18,40 @@ typedef unsigned short WORD;
 
 
 
+
 class chip8 {
     public:
-        chip8();
+        chip8();                            // Constructor. Initialises memory and all other aspects
 
-        void emulateCycle();
+        void Cycle();                       // Once cycle of code.
 
-        void loadGame(const char* game);
+        void loadGame(const char* game);    // Loads game from file input
+
+        
+
+     
+    private:
+        WORD opcode;                                // Code of current operation to perform. Nescesary data included in code.
+
+        BYTE memory[4096];                          // chip8 memory (4K)
+        BYTE V[16];                                 // registers. V[F] is reserved for flags
+
+        BYTE I;                                     // index
+        WORD pc;                                    // program counter
+
+        BYTE gfx[DISPLAY_WIDTH * DISPLAY_HEIGHT];   // display
+
+        BYTE delay_timer;                           // Delay timer. When not 0, counts down at 60hz
+        BYTE sound_timer;                           // Timer for sound. When not 0, plays a tone. Counts down at 60hz
+
+        WORD stack[16];                             // stack
+        WORD sp;                                    // stack pointer
+
+        BYTE keypad[16];                            // keys
+
+        // Random number generation
+        std::default_random_engine randGen;
+        std::uniform_int_distribution<BYTE> randByte;
 
         // opcode functions
         void OP_00E0(); void OP_00EE(); void OP_0nnn();
@@ -37,26 +64,19 @@ class chip8 {
         void OP_Fx0A(); void OP_Fx15(); void OP_Fx18(); void OP_Fx1E();
         void OP_Fx29(); void OP_Fx33(); void OP_Fx55(); void OP_Fx65();
 
-    private:
-        WORD opcode;
+        // null opcode (default)
+        void OP_NULL() {};
 
-        BYTE memory[4096];  // memory
-        BYTE V[16];         // registers
+        // table functions for opcodes with same first digit
+        void Table0(); void Table8(); void TableE(); void TableF(); 
 
-        BYTE I;             // index
-        WORD pc;            // program counter
-
-        BYTE gfx[DISPLAY_WIDTH * DISPLAY_HEIGHT];   // display
-
-        BYTE delay_timer;
-        BYTE sound_timer;
-
-        WORD stack[16];     // stacl
-        WORD sp;            // stack pointer
-
-        BYTE keypad[16];   // keys
-
-        BYTE key[16];
+        // function tables
+        typedef void (chip8::*Chip8Func)();         // Chip8func is a pointer to a function. We have arrays of these that point to each opcode
+        Chip8Func table[0xF + 1];                   // Unique opcodes. Goes from 0x0 to 0xF
+        Chip8Func table0[0xE + 1];                  // Opcodes where first digit is 0. Goes up to 0xE
+        Chip8Func table8[0xE + 1];                  // Opcodes where first digit is 8. Goes up to 0xE
+        Chip8Func tableE[0xE + 1];                  // Opcodes where the first digit is E. Goes uo to 0xE
+        Chip8Func tableF[0x65 + 1];                 // Opcodes where the first digit is F. Goes up to 0x65
 
         const BYTE chip8_fontset[80] = {
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -76,9 +96,5 @@ class chip8 {
             0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
             0xF0, 0x80, 0xF0, 0x80, 0x80  // F
         };  
-
-        // Random number generation
-        std::default_random_engine randGen;
-        std::uniform_int_distribution<BYTE> randByte;
 
 };
